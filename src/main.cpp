@@ -19,6 +19,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <vector>
 
 //===========================================================================
 // CLI
@@ -211,8 +212,17 @@ int main(int argc, char* argv[]) {
     for (const auto& entry : ini.gpuEntries) {
         printf("\n[gpu.%s]  match=\"%s\"\n", entry.label.c_str(), entry.match.c_str());
 
-        int gpuIdx = FindMatchingGpu(gpus, entry.match);
-        if (gpuIdx < 0) {
+        // Build list of matched GPU indices
+        std::vector<int> matchedIndices;
+        if (entry.match == "*") {
+            for (int i = 0; i < (int)gpus.size(); i++)
+                matchedIndices.push_back(i);
+        } else {
+            int gpuIdx = FindMatchingGpu(gpus, entry.match);
+            if (gpuIdx >= 0) matchedIndices.push_back(gpuIdx);
+        }
+
+        if (matchedIndices.empty()) {
             printf("  SKIP: No GPU matching \"%s\" found.\n", entry.match.c_str());
             continue;
         }
@@ -223,8 +233,9 @@ int main(int argc, char* argv[]) {
             continue;
         }
 
-        printf("  Matched GPU[%d]: %s\n", gpuIdx, gpus[gpuIdx].name.c_str());
-        printf("  Profile: %s (%s)\n", profile->name.c_str(), ProfileModeStr(*profile));
+        for (int gpuIdx : matchedIndices) {
+            printf("  Matched GPU[%d]: %s\n", gpuIdx, gpus[gpuIdx].name.c_str());
+            printf("  Profile: %s (%s)\n", profile->name.c_str(), ProfileModeStr(*profile));
 
         // Get fan handles
         uint32_t fanCount = 0;
@@ -248,6 +259,7 @@ int main(int argc, char* argv[]) {
         }
 
         delete[] fans;
+        } // for each matched GPU
     }
 
     // --- Done ---
