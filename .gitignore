@@ -1,4 +1,5 @@
 build/
+release_dist/
 *.exe
 *.lib
 *.exp
